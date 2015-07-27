@@ -13,104 +13,107 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DarkMapleLib.Helpers
 {
     /// <summary>
-    /// Helper class for Cipher related functionality
+    ///     Helper class for Cipher related functionality
     /// </summary>
     public class CipherHelper
     {
         #region Constructor and Variables
-        /// <summary>
-        /// Packet crypto, Incomming
-        /// </summary>
-        private Cipher RecvCipher { get; set; }
 
         /// <summary>
-        /// Packet crypto, Outgoing
+        ///     Packet crypto, Incomming
         /// </summary>
-        private Cipher SendCipher { get; set; }
+        private Cipher RecvCipher { get; }
 
         /// <summary>
-        /// Waiting state
+        ///     Packet crypto, Outgoing
+        /// </summary>
+        private Cipher SendCipher { get; }
+
+        /// <summary>
+        ///     Waiting state
         /// </summary>
         private bool IsWaiting { get; set; }
 
         /// <summary>
-        /// Data buffer
+        ///     Data buffer
         /// </summary>
         private byte[] DataBuffer { get; set; }
 
         /// <summary>
-        /// Current data in buffer
+        ///     Current data in buffer
         /// </summary>
         private int AvailableData { get; set; }
 
         /// <summary>
-        /// Amount of data to wait on
+        ///     Amount of data to wait on
         /// </summary>
         private int WaitForData { get; set; }
 
         /// <summary>
-        /// General locker for adding data
+        ///     General locker for adding data
         /// </summary>
-        private Object AddLocker = new Object();
+        private readonly object _addLocker = new object();
 
         /// <summary>
-        /// Creates a new instance of <see cref="CipherHelper"/>
+        ///     Creates a new instance of <see cref="CipherHelper" />
         /// </summary>
         /// <param name="currentGameVersion">The current MapleStory version</param>
-        /// <param name="AESKey">AESKey for the current MapleStory version</param>
+        /// <param name="aesKey">AESKey for the current MapleStory version</param>
         /// <param name="initialBufferSize">Sets the initial size of the buffer</param>
-        public CipherHelper(UInt16 currentGameVersion, UInt64 AESKey, UInt16 initialBufferSize = 0x100)
+        public CipherHelper(ushort currentGameVersion, ulong aesKey, ushort initialBufferSize = 0x100)
         {
-            RecvCipher = new Cipher(currentGameVersion, AESKey);
-            SendCipher = new Cipher(currentGameVersion, AESKey);
+            RecvCipher = new Cipher(currentGameVersion, aesKey);
+            SendCipher = new Cipher(currentGameVersion, aesKey);
 
             DataBuffer = new byte[initialBufferSize];
             AvailableData = 0;
             WaitForData = 0;
             IsWaiting = true;
         }
+
         #endregion
 
         #region Events
+
         /// <summary>
-        /// Callback for when a packet is finished
+        ///     Callback for when a packet is finished
         /// </summary>
         public delegate void CallPacketFinished(byte[] packet);
 
         /// <summary>
-        /// Event called when a packet has been handled by the crypto
+        ///     Event called when a packet has been handled by the crypto
         /// </summary>
         public event CallPacketFinished PacketFinished;
 
         /// <summary>
-        /// Callback for when a handshake is finished
+        ///     Callback for when a handshake is finished
         /// </summary>
-        public delegate void CallHandshakeFinished(UInt32 SIV, UInt32 RIV);
+        public delegate void CallHandshakeFinished(uint siv, uint riv);
 
         /// <summary>
-        /// Event called when a handshake has been handled by the crypto
+        ///     Event called when a handshake has been handled by the crypto
         /// </summary>
         public event CallHandshakeFinished HandshakeFinished;
+
         #endregion
 
         #region Public Methods
+
         /// <summary>
-        /// Adds data to the buffer to await decryption
+        ///     Adds data to the buffer to await decryption
         /// </summary>
         public void AddData(byte[] data)
         {
-            int length = data.Length;
-            lock (AddLocker)
+            var length = data.Length;
+            lock (_addLocker)
             {
                 EnsureCapacity(length + AvailableData);
                 Buffer.BlockCopy(data, 0, DataBuffer, AvailableData, length);
@@ -120,7 +123,7 @@ namespace DarkMapleLib.Helpers
             {
                 if (WaitForData <= AvailableData)
                 {
-                    int w = WaitForData - 2;
+                    var w = WaitForData - 2;
                     if (RecvCipher.Handshaken)
                         w -= 2;
 
@@ -133,16 +136,16 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Sets the Recv and Send Vectors for the ciphers
+        ///     Sets the Recv and Send Vectors for the ciphers
         /// </summary>
-        public void SetVectors(uint SIV, uint RIV)
+        public void SetVectors(uint siv, uint riv)
         {
-            SendCipher.SetIV(SIV);
-            RecvCipher.SetIV(RIV);
+            SendCipher.SetIv(siv);
+            RecvCipher.SetIv(riv);
         }
 
         /// <summary>
-        /// Encrypts packet data
+        ///     Encrypts packet data
         /// </summary>
 #if KMS || EMS
         public UInt16? Encrypt(ref byte[] data, bool toClient = false)
@@ -155,24 +158,25 @@ namespace DarkMapleLib.Helpers
             SendCipher.Encrypt(ref data, toClient);
         }
 #endif
+
         #endregion
 
         #region Private Methods
 
         /// <summary>
-        /// Prevents the buffer being to small
+        ///     Prevents the buffer being to small
         /// </summary>
         private void EnsureCapacity(int length)
         {
             if (DataBuffer.Length > length) return; //Return as quikly as posible
-            byte[] newBuffer = new byte[DataBuffer.Length + 0x50];
-            System.Buffer.BlockCopy(DataBuffer, 0, newBuffer, 0, DataBuffer.Length);
+            var newBuffer = new byte[DataBuffer.Length + 0x50];
+            Buffer.BlockCopy(DataBuffer, 0, newBuffer, 0, DataBuffer.Length);
             DataBuffer = newBuffer;
             EnsureCapacity(length);
         }
 
         /// <summary>
-        /// Checks if there is enough data to read, Or waits if there isn't.
+        ///     Checks if there is enough data to read, Or waits if there isn't.
         /// </summary>
         private void Wait()
         {
@@ -187,11 +191,11 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Second step of the wait sequence
+        ///     Second step of the wait sequence
         /// </summary>
         private void WaitMore(int length)
         {
-            int add = RecvCipher.Handshaken ? 4 : 2;
+            var add = RecvCipher.Handshaken ? 4 : 2;
 
             if (AvailableData < (length + add))
             {
@@ -210,19 +214,19 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Decrypts the packet data
+        ///     Decrypts the packet data
         /// </summary>
         private void Decrypt(byte[] data)
         {
             if (!RecvCipher.Handshaken)
             {
                 RecvCipher.Handshake(ref data);
-                ArrayReader pr = new ArrayReader(data);
+                var pr = new ArrayReader(data);
                 Debug.WriteLine("Server version {0}.{1}", pr.ReadShort(), pr.ReadMapleString());
-                uint siv = pr.ReadUInt();
-                uint riv = pr.ReadUInt();
-                SendCipher.SetIV(siv);
-                RecvCipher.SetIV(riv);
+                var siv = pr.ReadUInt();
+                var riv = pr.ReadUInt();
+                SendCipher.SetIv(siv);
+                RecvCipher.SetIv(riv);
 
                 if (HandshakeFinished != null)
                     HandshakeFinished(siv, riv);
@@ -239,7 +243,7 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Gets the packet header from the current packet.
+        ///     Gets the packet header from the current packet.
         /// </summary>
         private void GetHeader()
         {
@@ -247,10 +251,11 @@ namespace DarkMapleLib.Helpers
                 WaitMore(BitConverter.ToUInt16(DataBuffer, 0));
             else
             {
-                int packetLength = RecvCipher.GetPacketLength(DataBuffer);
+                var packetLength = RecvCipher.GetPacketLength(DataBuffer);
                 WaitMore(packetLength);
             }
         }
+
         #endregion
     }
 }

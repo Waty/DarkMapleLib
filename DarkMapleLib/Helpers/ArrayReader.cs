@@ -13,45 +13,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DarkMapleLib.Helpers
 {
     /// <summary>
-    /// Class to handle reading data from an byte array
+    ///     Class to handle reading data from an byte array
     /// </summary>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public class ArrayReader
     {
         /// <summary>
-        /// Buffer holding the packet data
+        ///     Creates a new instance of a ArrayReader using <paramref name="data" />
         /// </summary>
-        private byte[] Buffer { get; set; }
-
-        /// <summary>
-        /// Length of the packet
-        /// </summary>
-        public int Length { get; private set; }
-
-        /// <summary>
-        /// The position to start reading on
-        /// </summary>
-        public int Position { get; set; }
-
-        /// <summary>
-        /// Bytes left to read
-        /// </summary>
-        public int Available
-        {
-            get { return Length - Position; }
-        }
-
-        /// <summary>
-        /// Creates a new instance of a ArrayReader using <paramref name="data"/>
-        /// </summary>
+        /// <param name="data">The data to be read</param>
         /// <param name="length">Max length to use</param>
         public ArrayReader(byte[] data, int length = -1)
         {
@@ -61,16 +38,36 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Read function to set the new position 
+        ///     Buffer holding the packet data
+        /// </summary>
+        private byte[] Buffer { get; }
+
+        /// <summary>
+        ///     Length of the packet
+        /// </summary>
+        public int Length { get; }
+
+        /// <summary>
+        ///     The position to start reading on
+        /// </summary>
+        public int Position { get; set; }
+
+        /// <summary>
+        ///     Bytes left to read
+        /// </summary>
+        public int Available => Length - Position;
+
+        /// <summary>
+        ///     Read function to set the new position
         /// </summary>
         /// <param name="length">The length to read</param>
         /// <returns>The current position</returns>
         private int StartRead(int length)
         {
             if (length <= 0)
-                throw new ArgumentOutOfRangeException("length", "Length cannot be zero or negative");
+                throw new ArgumentOutOfRangeException(nameof(length), "Length cannot be zero or negative");
 
-            int sPosition = Position;
+            var sPosition = Position;
             Position += length;
             if (Available < 0)
             {
@@ -82,7 +79,7 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Reads a bool from the buffer
+        ///     Reads a bool from the buffer
         /// </summary>
         public bool ReadBool()
         {
@@ -90,15 +87,15 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Reads a signed byte from the buffer
+        ///     Reads a signed byte from the buffer
         /// </summary>
         public sbyte ReadSByte()
         {
-            return (sbyte)Buffer[StartRead(1)];
+            return (sbyte) Buffer[StartRead(1)];
         }
 
         /// <summary>
-        /// Reads a unsigned byte from the buffer
+        ///     Reads a unsigned byte from the buffer
         /// </summary>
         public byte ReadByte()
         {
@@ -106,17 +103,17 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Reads an byte array from the buffer
+        ///     Reads an byte array from the buffer
         /// </summary>
         public byte[] ReadBytes(int length)
         {
-            byte[] toRead = new byte[length];
+            var toRead = new byte[length];
             System.Buffer.BlockCopy(Buffer, StartRead(length), toRead, 0, length);
             return toRead;
         }
 
         /// <summary>
-        /// Reads a signed short from the buffer
+        ///     Reads a signed short from the buffer
         /// </summary>
         public short ReadShort()
         {
@@ -124,7 +121,7 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Reads a unsigned short from the buffer
+        ///     Reads a unsigned short from the buffer
         /// </summary>
         public ushort ReadUShort()
         {
@@ -132,7 +129,7 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Reads a signed int from the buffer
+        ///     Reads a signed int from the buffer
         /// </summary>
         public int ReadInt()
         {
@@ -140,7 +137,7 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Reads a unsigned int from the buffer
+        ///     Reads a unsigned int from the buffer
         /// </summary>
         public uint ReadUInt()
         {
@@ -148,7 +145,7 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Reads a signed long from the buffer
+        ///     Reads a signed long from the buffer
         /// </summary>
         public long ReadLong()
         {
@@ -156,7 +153,7 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Reads a unsigned long from the buffer
+        ///     Reads a unsigned long from the buffer
         /// </summary>
         public ulong ReadULong()
         {
@@ -164,38 +161,36 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Reads an ASCII string from the stream
+        ///     Reads an ASCII string from the stream
         /// </summary>
         /// <param name="length">Length to read</param>
+        /// <param name="nullchar">The chraacter that indicates the end of a string</param>
         public string ReadString(int length, char nullchar = '.')
         {
-            if (length == 0) return String.Empty;
+            if (length == 0) return string.Empty;
 
-            byte[] bytes = ReadBytes(length);
+            var bytes = ReadBytes(length);
 
-            char[] ret = new char[bytes.Length];
-            for (int x = 0; x < bytes.Length; x++)
+            var ret = new char[bytes.Length];
+            for (var x = 0; x < bytes.Length; x++)
             {
-                if (bytes[x] < 32 && bytes[x] >= 0)
+                if (bytes[x] < 32)
                     ret[x] = nullchar;
                 else
                 {
-                    int chr = ((short)bytes[x]) & 0xFF;
-                    ret[x] = (char)chr;
+                    var chr = bytes[x] & 0xFF;
+                    ret[x] = (char) chr;
                 }
             }
             if (nullchar != '.')
             {
-                return new String(ret).Replace(nullchar.ToString(), "");
+                return new string(ret).Replace(nullchar.ToString(), "");
             }
-            else
-            {
-                return new String(ret);
-            }
+            return new string(ret);
         }
 
         /// <summary>
-        /// Reads a MapleString from the buffer
+        ///     Reads a MapleString from the buffer
         /// </summary>
         public string ReadMapleString()
         {
@@ -203,7 +198,7 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Skips bytes in the stream
+        ///     Skips bytes in the stream
         /// </summary>
         /// <param name="length">Amount of bytes to skip</param>
         public void Skip(int length)
@@ -212,23 +207,20 @@ namespace DarkMapleLib.Helpers
         }
 
         /// <summary>
-        /// Creates an byte array of the current ArrayReader
+        ///     Creates an byte array of the current ArrayReader
         /// </summary>
         /// <param name="direct">If true, returns a direct reference of the buffer</param>
         public byte[] ToArray(bool direct = false)
         {
             if (direct)
                 return Buffer;
-            else
-            {
-                byte[] toRet = new byte[Buffer.Length];
-                System.Buffer.BlockCopy(Buffer, 0, toRet, 0, Buffer.Length);
-                return toRet;
-            }
+            var toRet = new byte[Buffer.Length];
+            System.Buffer.BlockCopy(Buffer, 0, toRet, 0, Buffer.Length);
+            return toRet;
         }
 
         /// <summary>
-        /// Returns a hex string representing the current ArrayReader
+        ///     Returns a hex string representing the current ArrayReader
         /// </summary>
         public override string ToString()
         {

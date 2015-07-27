@@ -13,103 +13,79 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DarkMapleLib
 {
     /// <summary>
-    /// Initialization vector used by the Cipher class
+    ///     Initialization vector used by the Cipher class
     /// </summary>
     internal class InitializationVector
     {
         /// <summary>
-        /// IV Container
+        ///     IV Container
         /// </summary>
-        private UInt32 Value = 0;
+        private uint _value;
 
         /// <summary>
-        /// Gets the bytes of the current container
+        ///     Creates a IV instance using <paramref name="vector" />
         /// </summary>
-        internal byte[] Bytes
+        /// <param name="vector">Initialization vector</param>
+        internal InitializationVector(uint vector)
         {
-            get
-            {
-                return BitConverter.GetBytes(Value);
-            }
+            _value = vector;
         }
 
         /// <summary>
-        /// Gets the HIWORD from the current container
+        ///     Gets the bytes of the current container
         /// </summary>
-        internal UInt16 HIWORD
-        {
-            get
-            {
-                return unchecked((UInt16)(Value >> 16));
-            }
-        }
+        internal byte[] Bytes => BitConverter.GetBytes(_value);
 
         /// <summary>
-        /// Gets the LOWORD from the current container
+        ///     Gets the HIWORD from the current container
         /// </summary>
-        internal UInt16 LOWORD
-        {
-            get
-            {
-                return (UInt16)Value;
-            }
-        }
+        // ReSharper disable once InconsistentNaming
+        internal ushort HIWORD => unchecked((ushort) (_value >> 16));
+
+        /// <summary>
+        ///     Gets the LOWORD from the current container
+        /// </summary>
+        // ReSharper disable once InconsistentNaming
+        internal ushort LOWORD => (ushort) _value;
 
 #if KMS || EMS
         /// <summary>
-        /// IV Security check
+        ///     IV Security check
         /// </summary>
-        internal bool MustSend
-        {
-            get
-            {
-                return LOWORD % 0x1F == 0;
-            }
-        }
+        internal bool MustSend => LOWORD%0x1F == 0;
 #endif
 
         /// <summary>
-        /// Creates a IV instance using <paramref name="vector"/>
-        /// </summary>
-        /// <param name="vector">Initialization vector</param>
-        internal InitializationVector(UInt32 vector)
-        {
-            Value = vector;
-        }
-
-        /// <summary>
-        /// Shuffles the current IV to the next vector using the shuffle table
+        ///     Shuffles the current IV to the next vector using the shuffle table
         /// </summary>
         internal unsafe void Shuffle()
         {
-            UInt32 Key = Constants.DefaultKey;
-            UInt32* pKey = &Key;
-            fixed (UInt32* pIV = &Value)
+            var key = Constants.DefaultKey;
+            var pKey = &key;
+            fixed (uint* pIv = &_value)
             {
                 fixed (byte* pShuffle = Constants.Shuffle)
                 {
-                    for (int i = 0; i < 4; i++)
+                    for (var i = 0; i < 4; i++)
                     {
-                        *((byte*)pKey + 0) += (byte)(*(pShuffle + *((byte*)pKey + 1)) - *((byte*)pIV + i));
-                        *((byte*)pKey + 1) -= (byte)(*((byte*)pKey + 2) ^ *(pShuffle + *((byte*)pIV + i)));
-                        *((byte*)pKey + 2) ^= (byte)(*((byte*)pIV + i) + *(pShuffle + *((byte*)pKey + 3)));
-                        *((byte*)pKey + 3) = (byte)(*((byte*)pKey + 3) - *(byte*)pKey + *(pShuffle + *((byte*)pIV + i)));
+                        *((byte*) pKey + 0) += (byte) (*(pShuffle + *((byte*) pKey + 1)) - *((byte*) pIv + i));
+                        *((byte*) pKey + 1) -= (byte) (*((byte*) pKey + 2) ^ *(pShuffle + *((byte*) pIv + i)));
+                        *((byte*) pKey + 2) ^= (byte) (*((byte*) pIv + i) + *(pShuffle + *((byte*) pKey + 3)));
+                        *((byte*) pKey + 3) =
+                            (byte) (*((byte*) pKey + 3) - *(byte*) pKey + *(pShuffle + *((byte*) pIv + i)));
 
-                        *(uint*)pKey = (*(uint*)pKey << 3) | (*(uint*)pKey >> (32 - 3));
+                        *pKey = (*pKey << 3) | (*pKey >> (32 - 3));
                     }
                 }
             }
 
-            Value = Key;
+            _value = key;
         }
     }
 }

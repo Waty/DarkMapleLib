@@ -13,28 +13,29 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-using System;
-using System.Collections.Generic;
-using System.Linq;
+
 using System.Text;
-using System.Threading.Tasks;
 
 namespace DarkMapleLib.Helpers
 {
+    /// <summary>
+    ///     Extensions to make life easier
+    /// </summary>
     public static class Extensions
     {
         /// <summary>
-        /// Converts a byte array to a hexadecimal string
+        ///     Converts a byte array to a hexadecimal string
         /// </summary>
         public static string ToHexString(this byte[] bArray, bool appendSpace = true)
         {
-            StringBuilder sb = new StringBuilder();
-            foreach (byte b in bArray)
+            var sb = new StringBuilder();
+            foreach (var b in bArray)
                 if (appendSpace)
                 {
                     sb.Append(b.ToString("X2"));
                     sb.Append(' ');
-                } else 
+                }
+                else
                     sb.Append(b.ToString("X2"));
             return sb.ToString();
         }

@@ -13,28 +13,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DarkMapleLib
 {
     /// <summary>
-    /// Cryptographic constants
+    ///     Cryptographic constants
     /// </summary>
-    internal class Constants
+    internal static class Constants
     {
         /// <summary>
-        /// dwDefaultKey
+        ///     dwDefaultKey
         /// </summary>
-        internal const UInt32 DefaultKey = 0xC65053F2;
+        internal const uint DefaultKey = 0xC65053F2;
 
         /// <summary>
-        /// Shuffle table used by MapleStory to shuffle the new IV
+        ///     Shuffle table used by MapleStory to shuffle the new IV
         /// </summary>
-        internal static readonly byte[] Shuffle = new byte[0x100] { 
+        internal static readonly byte[] Shuffle =
+        {
             0xEC, 0x3F, 0x77, 0xA4, 0x45, 0xD0, 0x71, 0xBF, 0xB7, 0x98, 0x20, 0xFC, 0x4B, 0xE9, 0xB3, 0xE1,
             0x5C, 0x22, 0xF7, 0x0C, 0x44, 0x1B, 0x81, 0xBD, 0x63, 0x8D, 0xD4, 0xC3, 0xF2, 0x10, 0x19, 0xE0,
             0xFB, 0xA1, 0x6E, 0x66, 0xEA, 0xAE, 0xD6, 0xCE, 0x06, 0x18, 0x4E, 0xEB, 0x78, 0x95, 0xDB, 0xBA,
