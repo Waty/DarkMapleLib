@@ -15,6 +15,7 @@ limitations under the License.
 */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -217,7 +218,7 @@ namespace DarkMapleLib.Helpers
             {
                 RecvCipher.Handshake(ref data);
                 ArrayReader pr = new ArrayReader(data);
-                Console.WriteLine("Server version {0}.{1}", pr.ReadShort(), pr.ReadMapleString());
+                Debug.WriteLine("Server version {0}.{1}", pr.ReadShort(), pr.ReadMapleString());
                 uint siv = pr.ReadUInt();
                 uint riv = pr.ReadUInt();
                 SendCipher.SetIV(siv);
